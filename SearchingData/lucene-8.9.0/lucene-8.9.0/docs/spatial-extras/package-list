@@ -1,0 +1,10 @@
+org.apache.lucene.spatial
+org.apache.lucene.spatial.bbox
+org.apache.lucene.spatial.composite
+org.apache.lucene.spatial.prefix
+org.apache.lucene.spatial.prefix.tree
+org.apache.lucene.spatial.query
+org.apache.lucene.spatial.serialized
+org.apache.lucene.spatial.spatial4j
+org.apache.lucene.spatial.util
+org.apache.lucene.spatial.vector

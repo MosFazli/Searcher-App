@@ -1,0 +1,6 @@
+org.apache.lucene.facet
+org.apache.lucene.facet.range
+org.apache.lucene.facet.sortedset
+org.apache.lucene.facet.taxonomy
+org.apache.lucene.facet.taxonomy.directory
+org.apache.lucene.facet.taxonomy.writercache

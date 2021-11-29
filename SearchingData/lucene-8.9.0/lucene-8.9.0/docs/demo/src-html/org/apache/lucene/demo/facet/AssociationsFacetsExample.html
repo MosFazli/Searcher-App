@@ -1,0 +1,237 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>/*<a name="line.1"></a>
+<span class="sourceLineNo">002</span> * Licensed to the Apache Software Foundation (ASF) under one or more<a name="line.2"></a>
+<span class="sourceLineNo">003</span> * contributor license agreements.  See the NOTICE file distributed with<a name="line.3"></a>
+<span class="sourceLineNo">004</span> * this work for additional information regarding copyright ownership.<a name="line.4"></a>
+<span class="sourceLineNo">005</span> * The ASF licenses this file to You under the Apache License, Version 2.0<a name="line.5"></a>
+<span class="sourceLineNo">006</span> * (the "License"); you may not use this file except in compliance with<a name="line.6"></a>
+<span class="sourceLineNo">007</span> * the License.  You may obtain a copy of the License at<a name="line.7"></a>
+<span class="sourceLineNo">008</span> *<a name="line.8"></a>
+<span class="sourceLineNo">009</span> *     http://www.apache.org/licenses/LICENSE-2.0<a name="line.9"></a>
+<span class="sourceLineNo">010</span> *<a name="line.10"></a>
+<span class="sourceLineNo">011</span> * Unless required by applicable law or agreed to in writing, software<a name="line.11"></a>
+<span class="sourceLineNo">012</span> * distributed under the License is distributed on an "AS IS" BASIS,<a name="line.12"></a>
+<span class="sourceLineNo">013</span> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.<a name="line.13"></a>
+<span class="sourceLineNo">014</span> * See the License for the specific language governing permissions and<a name="line.14"></a>
+<span class="sourceLineNo">015</span> * limitations under the License.<a name="line.15"></a>
+<span class="sourceLineNo">016</span> */<a name="line.16"></a>
+<span class="sourceLineNo">017</span>package org.apache.lucene.demo.facet;<a name="line.17"></a>
+<span class="sourceLineNo">018</span><a name="line.18"></a>
+<span class="sourceLineNo">019</span><a name="line.19"></a>
+<span class="sourceLineNo">020</span>import java.io.IOException;<a name="line.20"></a>
+<span class="sourceLineNo">021</span>import java.util.ArrayList;<a name="line.21"></a>
+<span class="sourceLineNo">022</span>import java.util.List;<a name="line.22"></a>
+<span class="sourceLineNo">023</span><a name="line.23"></a>
+<span class="sourceLineNo">024</span>import org.apache.lucene.analysis.core.WhitespaceAnalyzer;<a name="line.24"></a>
+<span class="sourceLineNo">025</span>import org.apache.lucene.document.Document;<a name="line.25"></a>
+<span class="sourceLineNo">026</span>import org.apache.lucene.facet.DrillDownQuery;<a name="line.26"></a>
+<span class="sourceLineNo">027</span>import org.apache.lucene.facet.FacetResult;<a name="line.27"></a>
+<span class="sourceLineNo">028</span>import org.apache.lucene.facet.Facets;<a name="line.28"></a>
+<span class="sourceLineNo">029</span>import org.apache.lucene.facet.FacetsCollector;<a name="line.29"></a>
+<span class="sourceLineNo">030</span>import org.apache.lucene.facet.FacetsConfig;<a name="line.30"></a>
+<span class="sourceLineNo">031</span>import org.apache.lucene.facet.taxonomy.FloatAssociationFacetField;<a name="line.31"></a>
+<span class="sourceLineNo">032</span>import org.apache.lucene.facet.taxonomy.IntAssociationFacetField;<a name="line.32"></a>
+<span class="sourceLineNo">033</span>import org.apache.lucene.facet.taxonomy.TaxonomyFacetSumFloatAssociations;<a name="line.33"></a>
+<span class="sourceLineNo">034</span>import org.apache.lucene.facet.taxonomy.TaxonomyFacetSumIntAssociations;<a name="line.34"></a>
+<span class="sourceLineNo">035</span>import org.apache.lucene.facet.taxonomy.TaxonomyReader;<a name="line.35"></a>
+<span class="sourceLineNo">036</span>import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyReader;<a name="line.36"></a>
+<span class="sourceLineNo">037</span>import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;<a name="line.37"></a>
+<span class="sourceLineNo">038</span>import org.apache.lucene.index.DirectoryReader;<a name="line.38"></a>
+<span class="sourceLineNo">039</span>import org.apache.lucene.index.IndexWriter;<a name="line.39"></a>
+<span class="sourceLineNo">040</span>import org.apache.lucene.index.IndexWriterConfig;<a name="line.40"></a>
+<span class="sourceLineNo">041</span>import org.apache.lucene.index.IndexWriterConfig.OpenMode;<a name="line.41"></a>
+<span class="sourceLineNo">042</span>import org.apache.lucene.search.IndexSearcher;<a name="line.42"></a>
+<span class="sourceLineNo">043</span>import org.apache.lucene.search.MatchAllDocsQuery;<a name="line.43"></a>
+<span class="sourceLineNo">044</span>import org.apache.lucene.store.Directory;<a name="line.44"></a>
+<span class="sourceLineNo">045</span>import org.apache.lucene.store.RAMDirectory;<a name="line.45"></a>
+<span class="sourceLineNo">046</span><a name="line.46"></a>
+<span class="sourceLineNo">047</span>/** Shows example usage of category associations. */<a name="line.47"></a>
+<span class="sourceLineNo">048</span>public class AssociationsFacetsExample {<a name="line.48"></a>
+<span class="sourceLineNo">049</span><a name="line.49"></a>
+<span class="sourceLineNo">050</span>  private final Directory indexDir = new RAMDirectory();<a name="line.50"></a>
+<span class="sourceLineNo">051</span>  private final Directory taxoDir = new RAMDirectory();<a name="line.51"></a>
+<span class="sourceLineNo">052</span>  private final FacetsConfig config;<a name="line.52"></a>
+<span class="sourceLineNo">053</span><a name="line.53"></a>
+<span class="sourceLineNo">054</span>  /** Empty constructor */<a name="line.54"></a>
+<span class="sourceLineNo">055</span>  public AssociationsFacetsExample() {<a name="line.55"></a>
+<span class="sourceLineNo">056</span>    config = new FacetsConfig();<a name="line.56"></a>
+<span class="sourceLineNo">057</span>    config.setMultiValued("tags", true);<a name="line.57"></a>
+<span class="sourceLineNo">058</span>    config.setIndexFieldName("tags", "$tags");<a name="line.58"></a>
+<span class="sourceLineNo">059</span>    config.setMultiValued("genre", true);<a name="line.59"></a>
+<span class="sourceLineNo">060</span>    config.setIndexFieldName("genre", "$genre");<a name="line.60"></a>
+<span class="sourceLineNo">061</span>  }<a name="line.61"></a>
+<span class="sourceLineNo">062</span>  <a name="line.62"></a>
+<span class="sourceLineNo">063</span>  /** Build the example index. */<a name="line.63"></a>
+<span class="sourceLineNo">064</span>  private void index() throws IOException {<a name="line.64"></a>
+<span class="sourceLineNo">065</span>    IndexWriterConfig iwc = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(OpenMode.CREATE);<a name="line.65"></a>
+<span class="sourceLineNo">066</span>    IndexWriter indexWriter = new IndexWriter(indexDir, iwc);<a name="line.66"></a>
+<span class="sourceLineNo">067</span><a name="line.67"></a>
+<span class="sourceLineNo">068</span>    // Writes facet ords to a separate directory from the main index<a name="line.68"></a>
+<span class="sourceLineNo">069</span>    DirectoryTaxonomyWriter taxoWriter = new DirectoryTaxonomyWriter(taxoDir);<a name="line.69"></a>
+<span class="sourceLineNo">070</span><a name="line.70"></a>
+<span class="sourceLineNo">071</span>    Document doc = new Document();<a name="line.71"></a>
+<span class="sourceLineNo">072</span>    // 3 occurrences for tag 'lucene'<a name="line.72"></a>
+<span class="sourceLineNo">073</span>    doc.add(new IntAssociationFacetField(3, "tags", "lucene"));<a name="line.73"></a>
+<span class="sourceLineNo">074</span>    // 87% confidence level of genre 'computing'<a name="line.74"></a>
+<span class="sourceLineNo">075</span>    doc.add(new FloatAssociationFacetField(0.87f, "genre", "computing"));<a name="line.75"></a>
+<span class="sourceLineNo">076</span>    indexWriter.addDocument(config.build(taxoWriter, doc));<a name="line.76"></a>
+<span class="sourceLineNo">077</span><a name="line.77"></a>
+<span class="sourceLineNo">078</span>    doc = new Document();<a name="line.78"></a>
+<span class="sourceLineNo">079</span>    // 1 occurrence for tag 'lucene'<a name="line.79"></a>
+<span class="sourceLineNo">080</span>    doc.add(new IntAssociationFacetField(1, "tags", "lucene"));<a name="line.80"></a>
+<span class="sourceLineNo">081</span>    // 2 occurrence for tag 'solr'<a name="line.81"></a>
+<span class="sourceLineNo">082</span>    doc.add(new IntAssociationFacetField(2, "tags", "solr"));<a name="line.82"></a>
+<span class="sourceLineNo">083</span>    // 75% confidence level of genre 'computing'<a name="line.83"></a>
+<span class="sourceLineNo">084</span>    doc.add(new FloatAssociationFacetField(0.75f, "genre", "computing"));<a name="line.84"></a>
+<span class="sourceLineNo">085</span>    // 34% confidence level of genre 'software'<a name="line.85"></a>
+<span class="sourceLineNo">086</span>    doc.add(new FloatAssociationFacetField(0.34f, "genre", "software"));<a name="line.86"></a>
+<span class="sourceLineNo">087</span>    indexWriter.addDocument(config.build(taxoWriter, doc));<a name="line.87"></a>
+<span class="sourceLineNo">088</span><a name="line.88"></a>
+<span class="sourceLineNo">089</span>    indexWriter.close();<a name="line.89"></a>
+<span class="sourceLineNo">090</span>    taxoWriter.close();<a name="line.90"></a>
+<span class="sourceLineNo">091</span>  }<a name="line.91"></a>
+<span class="sourceLineNo">092</span><a name="line.92"></a>
+<span class="sourceLineNo">093</span>  /** User runs a query and aggregates facets by summing their association values. */<a name="line.93"></a>
+<span class="sourceLineNo">094</span>  private List&lt;FacetResult&gt; sumAssociations() throws IOException {<a name="line.94"></a>
+<span class="sourceLineNo">095</span>    DirectoryReader indexReader = DirectoryReader.open(indexDir);<a name="line.95"></a>
+<span class="sourceLineNo">096</span>    IndexSearcher searcher = new IndexSearcher(indexReader);<a name="line.96"></a>
+<span class="sourceLineNo">097</span>    TaxonomyReader taxoReader = new DirectoryTaxonomyReader(taxoDir);<a name="line.97"></a>
+<span class="sourceLineNo">098</span>    <a name="line.98"></a>
+<span class="sourceLineNo">099</span>    FacetsCollector fc = new FacetsCollector();<a name="line.99"></a>
+<span class="sourceLineNo">100</span>    <a name="line.100"></a>
+<span class="sourceLineNo">101</span>    // MatchAllDocsQuery is for "browsing" (counts facets<a name="line.101"></a>
+<span class="sourceLineNo">102</span>    // for all non-deleted docs in the index); normally<a name="line.102"></a>
+<span class="sourceLineNo">103</span>    // you'd use a "normal" query:<a name="line.103"></a>
+<span class="sourceLineNo">104</span>    FacetsCollector.search(searcher, new MatchAllDocsQuery(), 10, fc);<a name="line.104"></a>
+<span class="sourceLineNo">105</span>    <a name="line.105"></a>
+<span class="sourceLineNo">106</span>    Facets tags = new TaxonomyFacetSumIntAssociations("$tags", taxoReader, config, fc);<a name="line.106"></a>
+<span class="sourceLineNo">107</span>    Facets genre = new TaxonomyFacetSumFloatAssociations("$genre", taxoReader, config, fc);<a name="line.107"></a>
+<span class="sourceLineNo">108</span><a name="line.108"></a>
+<span class="sourceLineNo">109</span>    // Retrieve results<a name="line.109"></a>
+<span class="sourceLineNo">110</span>    List&lt;FacetResult&gt; results = new ArrayList&lt;&gt;();<a name="line.110"></a>
+<span class="sourceLineNo">111</span>    results.add(tags.getTopChildren(10, "tags"));<a name="line.111"></a>
+<span class="sourceLineNo">112</span>    results.add(genre.getTopChildren(10, "genre"));<a name="line.112"></a>
+<span class="sourceLineNo">113</span><a name="line.113"></a>
+<span class="sourceLineNo">114</span>    indexReader.close();<a name="line.114"></a>
+<span class="sourceLineNo">115</span>    taxoReader.close();<a name="line.115"></a>
+<span class="sourceLineNo">116</span>    <a name="line.116"></a>
+<span class="sourceLineNo">117</span>    return results;<a name="line.117"></a>
+<span class="sourceLineNo">118</span>  }<a name="line.118"></a>
+<span class="sourceLineNo">119</span>  <a name="line.119"></a>
+<span class="sourceLineNo">120</span>  /** User drills down on 'tags/solr'. */<a name="line.120"></a>
+<span class="sourceLineNo">121</span>  private FacetResult drillDown() throws IOException {<a name="line.121"></a>
+<span class="sourceLineNo">122</span>    DirectoryReader indexReader = DirectoryReader.open(indexDir);<a name="line.122"></a>
+<span class="sourceLineNo">123</span>    IndexSearcher searcher = new IndexSearcher(indexReader);<a name="line.123"></a>
+<span class="sourceLineNo">124</span>    TaxonomyReader taxoReader = new DirectoryTaxonomyReader(taxoDir);<a name="line.124"></a>
+<span class="sourceLineNo">125</span><a name="line.125"></a>
+<span class="sourceLineNo">126</span>    // Passing no baseQuery means we drill down on all<a name="line.126"></a>
+<span class="sourceLineNo">127</span>    // documents ("browse only"):<a name="line.127"></a>
+<span class="sourceLineNo">128</span>    DrillDownQuery q = new DrillDownQuery(config);<a name="line.128"></a>
+<span class="sourceLineNo">129</span><a name="line.129"></a>
+<span class="sourceLineNo">130</span>    // Now user drills down on Publish Date/2010:<a name="line.130"></a>
+<span class="sourceLineNo">131</span>    q.add("tags", "solr");<a name="line.131"></a>
+<span class="sourceLineNo">132</span>    FacetsCollector fc = new FacetsCollector();<a name="line.132"></a>
+<span class="sourceLineNo">133</span>    FacetsCollector.search(searcher, q, 10, fc);<a name="line.133"></a>
+<span class="sourceLineNo">134</span><a name="line.134"></a>
+<span class="sourceLineNo">135</span>    // Retrieve results<a name="line.135"></a>
+<span class="sourceLineNo">136</span>    Facets facets = new TaxonomyFacetSumFloatAssociations("$genre", taxoReader, config, fc);<a name="line.136"></a>
+<span class="sourceLineNo">137</span>    FacetResult result = facets.getTopChildren(10, "genre");<a name="line.137"></a>
+<span class="sourceLineNo">138</span><a name="line.138"></a>
+<span class="sourceLineNo">139</span>    indexReader.close();<a name="line.139"></a>
+<span class="sourceLineNo">140</span>    taxoReader.close();<a name="line.140"></a>
+<span class="sourceLineNo">141</span>    <a name="line.141"></a>
+<span class="sourceLineNo">142</span>    return result;<a name="line.142"></a>
+<span class="sourceLineNo">143</span>  }<a name="line.143"></a>
+<span class="sourceLineNo">144</span>  <a name="line.144"></a>
+<span class="sourceLineNo">145</span>  /** Runs summing association example. */<a name="line.145"></a>
+<span class="sourceLineNo">146</span>  public List&lt;FacetResult&gt; runSumAssociations() throws IOException {<a name="line.146"></a>
+<span class="sourceLineNo">147</span>    index();<a name="line.147"></a>
+<span class="sourceLineNo">148</span>    return sumAssociations();<a name="line.148"></a>
+<span class="sourceLineNo">149</span>  }<a name="line.149"></a>
+<span class="sourceLineNo">150</span>  <a name="line.150"></a>
+<span class="sourceLineNo">151</span>  /** Runs the drill-down example. */<a name="line.151"></a>
+<span class="sourceLineNo">152</span>  public FacetResult runDrillDown() throws IOException {<a name="line.152"></a>
+<span class="sourceLineNo">153</span>    index();<a name="line.153"></a>
+<span class="sourceLineNo">154</span>    return drillDown();<a name="line.154"></a>
+<span class="sourceLineNo">155</span>  }<a name="line.155"></a>
+<span class="sourceLineNo">156</span><a name="line.156"></a>
+<span class="sourceLineNo">157</span>  /** Runs the sum int/float associations examples and prints the results. */<a name="line.157"></a>
+<span class="sourceLineNo">158</span>  public static void main(String[] args) throws Exception {<a name="line.158"></a>
+<span class="sourceLineNo">159</span>    System.out.println("Sum associations example:");<a name="line.159"></a>
+<span class="sourceLineNo">160</span>    System.out.println("-------------------------");<a name="line.160"></a>
+<span class="sourceLineNo">161</span>    List&lt;FacetResult&gt; results = new AssociationsFacetsExample().runSumAssociations();<a name="line.161"></a>
+<span class="sourceLineNo">162</span>    System.out.println("tags: " + results.get(0));<a name="line.162"></a>
+<span class="sourceLineNo">163</span>    System.out.println("genre: " + results.get(1));<a name="line.163"></a>
+<span class="sourceLineNo">164</span>  }<a name="line.164"></a>
+<span class="sourceLineNo">165</span>}<a name="line.165"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>

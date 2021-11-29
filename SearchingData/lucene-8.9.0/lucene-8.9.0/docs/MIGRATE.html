@@ -1,0 +1,64 @@
+<html>
+<head>
+<title>Apache Lucene Migration Guide</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+</head>
+<body>
+<h1 id="apache-lucene-migration-guide">Apache Lucene Migration Guide</h1>
+<h2 id="termsenum-is-now-fully-abstract-lucene-8292">TermsEnum is now fully abstract (<a href="https://issues.apache.org/jira/browse/LUCENE-8292">LUCENE-8292</a>)</h2>
+<p>TermsEnum has been changed to be fully abstract, so non-abstract subclass must implement all it's methods. Non-Performance critical TermsEnums can use BaseTermsEnum as a base class instead. The change was motivated by several performance issues with FilterTermsEnum that caused significant slowdowns and massive memory consumption due to not delegating all method from TermsEnum. See <a href="https://issues.apache.org/jira/browse/LUCENE-8292">LUCENE-8292</a> and <a href="https://issues.apache.org/jira/browse/LUCENE-8662">LUCENE-8662</a></p>
+<h2 id="similaritysimscorercomputexxxfactor-methods-removed-lucene-8014">Similarity.SimScorer.computeXXXFactor methods removed (<a href="https://issues.apache.org/jira/browse/LUCENE-8014">LUCENE-8014</a>)</h2>
+<p>SpanQuery and PhraseQuery now always calculate their slops as (1.0 / (1.0 + distance)).  Payload factor calculation is performed by PayloadDecoder in the queries module</p>
+<h2 id="scorer-must-produce-positive-scores-lucene-7996">Scorer must produce positive scores (<a href="https://issues.apache.org/jira/browse/LUCENE-7996">LUCENE-7996</a>)</h2>
+<p>Scorers are no longer allowed to produce negative scores. If you have custom query implementations, you should make sure their score formula may never produce negative scores.</p>
+<p>As a side-effect of this change, negative boosts are now rejected and FunctionScoreQuery maps negative values to 0.</p>
+<h2 id="customscorequery-boostedquery-and-boostingquery-removed-lucene-8099">CustomScoreQuery, BoostedQuery and BoostingQuery removed (<a href="https://issues.apache.org/jira/browse/LUCENE-8099">LUCENE-8099</a>)</h2>
+<p>Instead use FunctionScoreQuery and a DoubleValuesSource implementation.  BoostedQuery and BoostingQuery may be replaced by calls to FunctionScoreQuery.boostByValue() and FunctionScoreQuery.boostByQuery().  To replace more complex calculations in CustomScoreQuery, use the lucene-expressions module:</p>
+<p>SimpleBindings bindings = new SimpleBindings(); bindings.add(&quot;score&quot;, DoubleValuesSource.SCORES); bindings.add(&quot;boost1&quot;, DoubleValuesSource.fromIntField(&quot;myboostfield&quot;)); bindings.add(&quot;boost2&quot;, DoubleValuesSource.fromIntField(&quot;myotherboostfield&quot;)); Expression expr = JavascriptCompiler.compile(&quot;score * (boost1 + ln(boost2))&quot;); FunctionScoreQuery q = new FunctionScoreQuery(inputQuery, expr.getDoubleValuesSource(bindings));</p>
+<h2 id="index-options-can-no-longer-be-changed-dynamically-lucene-8134">Index options can no longer be changed dynamically (<a href="https://issues.apache.org/jira/browse/LUCENE-8134">LUCENE-8134</a>)</h2>
+<p>Changing index options on the fly is now going to result into an IllegalArgumentException. If a field is indexed (FieldType.indexOptions() != IndexOptions.NONE) then all documents must have the same index options for that field.</p>
+<h2 id="indexsearchercreatenormalizedweight-removed-lucene-8242">IndexSearcher.createNormalizedWeight() removed (<a href="https://issues.apache.org/jira/browse/LUCENE-8242">LUCENE-8242</a>)</h2>
+<p>Instead use IndexSearcher.createWeight(), rewriting the query first, and using a boost of 1f.</p>
+<h2 id="memory-codecs-removed-lucene-8267">Memory codecs removed (<a href="https://issues.apache.org/jira/browse/LUCENE-8267">LUCENE-8267</a>)</h2>
+<p>Memory codecs have been removed from the codebase (MemoryPostings, MemoryDocValues).</p>
+<h2 id="querycachingpolicyalways-cache-removed-lucene-8144">QueryCachingPolicy.ALWAYS_CACHE removed (<a href="https://issues.apache.org/jira/browse/LUCENE-8144">LUCENE-8144</a>)</h2>
+<p>Caching everything is discouraged as it disables the ability to skip non-interesting documents. ALWAYS_CACHE can be replaced by a UsageTrackingQueryCachingPolicy with an appropriate config.</p>
+<h2 id="english-stopwords-are-no-longer-removed-by-default-in-standardanalyzer-lucene-7444">English stopwords are no longer removed by default in StandardAnalyzer (LUCENE_7444)</h2>
+<p>To retain the old behaviour, pass EnglishAnalyzer.ENGLISH_STOP_WORDS_SET as an argument to the constructor</p>
+<h2 id="standardanalyzerenglish-stop-words-set-has-been-moved">StandardAnalyzer.ENGLISH_STOP_WORDS_SET has been moved</h2>
+<p>English stop words are now defined in EnglishAnalyzer#ENGLISH_STOP_WORDS_SET in the analysis-common module</p>
+<h2 id="topdocsmaxscore-removed">TopDocs.maxScore removed</h2>
+<p>TopDocs.maxScore is removed. IndexSearcher and TopFieldCollector no longer have an option to compute the maximum score when sorting by field. If you need to know the maximum score for a query, the recommended approach is to run a separate query:</p>
+<p>TopDocs topHits = searcher.search(query, 1); float maxScore = topHits.scoreDocs.length == 0 ? Float.NaN : topHits.scoreDocs[0].score;</p>
+<p>Thanks to other optimizations that were added to Lucene 8, this query will be able to efficiently select the top-scoring document without having to visit all matches.</p>
+<h2 id="topfieldcollector-always-assumes-fillfieldstrue">TopFieldCollector always assumes fillFields=true</h2>
+<p>Because filling sort values doesn't have a significant overhead, the fillFields option has been removed from TopFieldCollector factory methods. Everything behaves as if it was set to true.</p>
+<h2 id="topfieldcollector-no-longer-takes-a-trackdocscores-option">TopFieldCollector no longer takes a trackDocScores option</h2>
+<p>Computing scores at collection time is less efficient than running a second request in order to only compute scores for documents that made it to the top hits. As a consequence, the trackDocScores option has been removed and can be replaced with the new TopFieldCollector#populateScores helper method.</p>
+<h2 id="indexsearchersearchafter-may-return-lower-bounds-of-the-hit-count-and-topdocstotalhits-is-no-longer-a-long">IndexSearcher.search(After) may return lower bounds of the hit count and TopDocs.totalHits is no longer a long</h2>
+<p>Lucene 8 received optimizations for collection of top-k matches by not visiting all matches. However these optimizations won't help if all matches still need to be visited in order to compute the total number of hits. As a consequence, IndexSearcher's search and searchAfter methods were changed to only count hits accurately up to 1,000, and Topdocs.totalHits was changed from a long to an object that says whether the hit count is accurate or a lower bound of the actual hit count.</p>
+<h2 id="ramdirectory-ramfile-raminputstream-ramoutputstream-are-deprecated">RAMDirectory, RAMFile, RAMInputStream, RAMOutputStream are deprecated</h2>
+<p>This RAM-based directory implementation is an old piece of code that uses inefficient thread synchronization primitives and can be confused as &quot;faster&quot; than the NIO-based MMapDirectory. It is deprecated and scheduled for removal in future versions of Lucene. (<a href="https://issues.apache.org/jira/browse/LUCENE-8467">LUCENE-8467</a>, <a href="https://issues.apache.org/jira/browse/LUCENE-8438">LUCENE-8438</a>)</p>
+<h2 id="leafcollectorsetscorer-now-takes-a-scorable-rather-than-a-scorer">LeafCollector.setScorer() now takes a Scorable rather than a Scorer</h2>
+<p>Scorer has a number of methods that should never be called from Collectors, for example those that advance the underlying iterators.  To hide these, LeafCollector.setScorer() now takes a Scorable, an abstract class that Scorers can extend, with methods docId() and score() (<a href="https://issues.apache.org/jira/browse/LUCENE-6228">LUCENE-6228</a>)</p>
+<h2 id="scorers-must-have-non-null-weights">Scorers must have non-null Weights</h2>
+<p>If a custom Scorer implementation does not have an associated Weight, it can probably be replaced with a Scorable instead.</p>
+<h2 id="suggesters-now-return-long-instead-of-long-for-weight-during-indexing-and-double">Suggesters now return Long instead of long for weight() during indexing, and double</h2>
+<p>instead of long at suggest time ##</p>
+<p>Most code should just require recompilation, though possibly requiring some added casts.</p>
+<h2 id="tokenstreamcomponents-is-now-final">TokenStreamComponents is now final</h2>
+<p>Instead of overriding TokenStreamComponents#setReader() to customise analyzer initialisation, you should now pass a Consumer&lt;Reader&gt; instance to the TokenStreamComponents constructor.</p>
+<h2 id="lowercasetokenizer-and-lowercasetokenizerfactory-have-been-removed">LowerCaseTokenizer and LowerCaseTokenizerFactory have been removed</h2>
+<p>LowerCaseTokenizer combined tokenization and filtering in a way that broke token normalization, so they have been removed. Instead, use a LetterTokenizer followed by a LowerCaseFilter</p>
+<h2 id="chartokenizer-no-longer-takes-a-normalizer-function">CharTokenizer no longer takes a normalizer function</h2>
+<p>CharTokenizer now only performs tokenization. To perform any type of filtering use a TokenFilter chain as you would with any other Tokenizer.</p>
+<h2 id="highlighter-and-fastvectorhighlighter-no-longer-support-toparenttochildblockjoinquery">Highlighter and FastVectorHighlighter no longer support ToParent/ToChildBlockJoinQuery</h2>
+<p>Both Highlighter and FastVectorHighlighter need a custom WeightedSpanTermExtractor or FieldQuery respectively in order to support ToParent/ToChildBlockJoinQuery.</p>
+<h2 id="multitermawarecomponent-replaced-by-charfilterfactorynormalize-and-tokenfilterfactorynormalize">MultiTermAwareComponent replaced by CharFilterFactory#normalize() and TokenFilterFactory#normalize()</h2>
+<p>Normalization is now type-safe, with CharFilterFactory#normalize() returning a Reader and TokenFilterFactory#normalize() returning a TokenFilter.</p>
+<h2 id="k11-constant-factor-removed-from-bm25-similarity-numerator-lucene-8563">k1+1 constant factor removed from BM25 similarity numerator (<a href="https://issues.apache.org/jira/browse/LUCENE-8563">LUCENE-8563</a>)</h2>
+<p>Scores computed by the BM25 similarity are lower than previously as the k1+1 constant factor was removed from the numerator of the scoring formula. Ordering of results is preserved unless scores are computed from multiple fields using different similarities. The previous behaviour is now exposed by the LegacyBM25Similarity class which can be found in the lucene-misc jar.</p>
+<h2 id="indexwritermaxdocnumdocs-removed-in-favor-of-indexwritergetdocstats">IndexWriter#maxDoc()/#numDocs() removed in favor of IndexWriter#getDocStats()</h2>
+<p>IndexWriter#getDocStats() should be used instead of #maxDoc() / #numDocs() which offers a consistent view on document stats. Previously calling two methods in order ot get point in time stats was subject to concurrent changes.</p>
+</body>
+</html>

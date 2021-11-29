@@ -1,0 +1,5 @@
+org.apache.lucene.codecs.idversion
+org.apache.lucene.document
+org.apache.lucene.payloads
+org.apache.lucene.sandbox.queries
+org.apache.lucene.search
