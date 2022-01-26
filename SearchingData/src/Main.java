@@ -2,7 +2,7 @@
 // Searching with Lucence
 // This app created in 22 November 2021
 
-//import libraries
+// import Lucence libraries
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -20,32 +20,32 @@ import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 
+// import java libaries
 import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Scanner;
 
 
-//main class
+// <ain class
 public class Main {
 
     public static void main(String[] args) throws IOException {
-        // 0. Specify the analyzer for tokenizing text.
-        //    The same analyzer should be used for indexing and searching
+        //  Specify the analyzer for tokenizing text.
+        //  The same analyzer should be used for indexing and searching
         StandardAnalyzer analyzer = new StandardAnalyzer();
 
-        // 1. create the index
+        // create the index
         Directory index = new RAMDirectory();
-
         IndexWriterConfig config = new IndexWriterConfig(analyzer);
-
         IndexWriter w = new IndexWriter(index,config);
 
-
+        // create variables
         String[] list = new String[2];
         ArrayList<String> textFiles = new ArrayList<>();
         ArrayList<String> stopWordsList = new ArrayList<>();
 
+        // added some stop words
         stopWordsList.add(" not ");
         stopWordsList.add(" this ");
         stopWordsList.add(" is ");
@@ -62,18 +62,23 @@ public class Main {
         stopWordsList.add(" with ");
         stopWordsList.add(" be ");
 
+        // check availability of file and read it, then create index
         for (int i = 1; i <= 314; i++) {
 
             String address = "E:\\GitHub\\Searcher App\\Searcher-App\\Example Database\\";
-
+            // check availability
             if(new File(address + String.valueOf(i) + ".txt").isFile()) {
+                // read file with fileRead function
                 list = fileRead(i);
 
+                // delete stop words from index text
                 for (int j = 0; j < stopWordsList.size(); j++) {
                     list[0] = list[0].replace(stopWordsList.get(j)," ");
                 }
 
+                // add indexed text
                 addDoc(w,list[0]);
+                // add original text without edited
                 textFiles.add(list[1]);
 
 
@@ -84,16 +89,17 @@ public class Main {
 
         w.close();
 
-        // 2. query
-        //String inputSearch = "lossy";
-        //String inputSearch = "nonasymptotic or lossy";
-        //String inputSearch = "nonasymptotic and lossy";
-        String inputSearch = "not lossy";
+        //  query
 
+        // example queries
+         String inputSearch = "lossy";
+        // String inputSearch = "nonasymptotic or lossy";
+        // String inputSearch = "nonasymptotic and lossy";
+        // String inputSearch = "not lossy";
 
+        // get query with input
         Scanner scanner = new Scanner(System.in);
         //String inputSearch = scanner.nextLine();
-
 
         String[] queries = inputSearch.toLowerCase().split(" ");
 
@@ -125,7 +131,7 @@ public class Main {
                 e.printStackTrace();
             }
 
-            // 3. search
+            //  search
             int hitsPerPage = 20;
             IndexReader reader = DirectoryReader.open(index);
             IndexSearcher searcher = new IndexSearcher(reader);
@@ -133,7 +139,7 @@ public class Main {
             searcher.search(query, collector);
             ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
-            // 4. display results
+            //  display results
             System.out.println("--------------***********--------------");
             System.out.println("Found " + search1 + " " + hits.length + " hits:" + "\n");
 
@@ -180,7 +186,7 @@ public class Main {
                 e.printStackTrace();
             }
 
-            // 3. search
+            //  search
             int hitsPerPage = 20;
             IndexReader reader = DirectoryReader.open(index);
             IndexSearcher searcher = new IndexSearcher(reader);
@@ -188,7 +194,7 @@ public class Main {
             searcher.search(query, collector);
             ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
-            // 4. display results
+            //  display results
             System.out.println("--------------***********--------------");
             System.out.println("Found Not " + search1 + " " + hits.length + " hits:" + "\n");
 
@@ -241,7 +247,7 @@ public class Main {
                     e.printStackTrace();
                 }
 
-                // 3. search
+                //  search
                 int hitsPerPage = 20;
                 IndexReader reader = DirectoryReader.open(index);
                 IndexSearcher searcher = new IndexSearcher(reader);
@@ -249,7 +255,7 @@ public class Main {
                 searcher.search(query, collector);
                 ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
-                // 4. display results
+                //  display results
                 // System.out.println("--------------***********--------------");
                 //System.out.println("Found " + search1 + " " + hits.length + " hits:" + "\n");
 
@@ -293,7 +299,7 @@ public class Main {
                     e.printStackTrace();
                 }
 
-                // 3. search
+                //  search
                 int hitsPerPage2 = 20;
                 IndexReader reader2 = DirectoryReader.open(index);
                 IndexSearcher searcher2 = new IndexSearcher(reader2);
@@ -301,7 +307,7 @@ public class Main {
                 searcher2.search(query2, collector2);
                 ScoreDoc[] hits2 = collector2.topDocs().scoreDocs;
 
-                // 4. display results
+                //  display results
                 //   System.out.println("--------------***********--------------");
                 // System.out.println("Found " + search2 + " " + hits2.length + " hits:" + "\n");
 
@@ -383,7 +389,7 @@ public class Main {
                     e.printStackTrace();
                 }
 
-                // 3. search
+                //  search
                 int hitsPerPage = 20;
                 IndexReader reader = DirectoryReader.open(index);
                 IndexSearcher searcher = new IndexSearcher(reader);
@@ -391,7 +397,7 @@ public class Main {
                 searcher.search(query, collector);
                 ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
-                // 4. display results
+                //  display results
                 // System.out.println("--------------***********--------------");
                 //System.out.println("Found " + search1 + " " + hits.length + " hits:" + "\n");
 
@@ -435,7 +441,7 @@ public class Main {
                     e.printStackTrace();
                 }
 
-                // 3. search
+                //  search
                 int hitsPerPage2 = 10;
                 IndexReader reader2 = DirectoryReader.open(index);
                 IndexSearcher searcher2 = new IndexSearcher(reader2);
@@ -443,7 +449,7 @@ public class Main {
                 searcher2.search(query2, collector2);
                 ScoreDoc[] hits2 = collector.topDocs().scoreDocs;
 
-                // 4. display results
+                //  display results
                 //   System.out.println("--------------***********--------------");
                 // System.out.println("Found " + search2 + " " + hits2.length + " hits:" + "\n");
 
