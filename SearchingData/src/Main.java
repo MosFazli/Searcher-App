@@ -1,5 +1,5 @@
 // 𝕄𝕠𝕤𝔽𝕒𝕫𝕝𝕚
-// Searcher
+// Searching with Lucence
 // This app created in 22 November 2021
 
 //import libraries
@@ -19,9 +19,11 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.Scanner;
 
 
 //main class
@@ -37,14 +39,11 @@ public class Main {
 
         IndexWriterConfig config = new IndexWriterConfig(analyzer);
 
-
-
         IndexWriter w = new IndexWriter(index,config);
 
 
         String[] list = new String[2];
         ArrayList<String> textFiles = new ArrayList<>();
-//        String list2= new String();
         ArrayList<String> stopWordsList = new ArrayList<>();
 
         stopWordsList.add(" not ");
@@ -64,34 +63,38 @@ public class Main {
         stopWordsList.add(" be ");
 
         for (int i = 1; i <= 314; i++) {
-            //System.out.println(i + "\t" + fileRead(i));
-            //addDoc(w, fileRead(i));
-            String address = "E:\\SearchingData_Database\\";
 
-            //File f = new File(address + String.valueOf(index) + ".txt");
+            String address = "E:\\GitHub\\Searcher App\\Searcher-App\\Example Database\\";
+
             if(new File(address + String.valueOf(i) + ".txt").isFile()) {
                 list = fileRead(i);
-               // System.out.println(list1);
+
                 for (int j = 0; j < stopWordsList.size(); j++) {
                     list[0] = list[0].replace(stopWordsList.get(j)," ");
                 }
-                // System.out.println(list1);
+
                 addDoc(w,list[0]);
                 textFiles.add(list[1]);
-               //System.out.println(list1);
+
 
             }
         }
 
 
-        /*addDoc(w, "Lucene in Action");
-        addDoc(w, "Lucene for Dummies" );
-        addDoc(w, "Managing Gigabytes");
-        addDoc(w, "The Art of Computer Science");*/
+
         w.close();
 
         // 2. query
-        String inputSearch = "Conformal";
+        //String inputSearch = "lossy";
+        //String inputSearch = "nonasymptotic or lossy";
+        //String inputSearch = "nonasymptotic and lossy";
+        String inputSearch = "not lossy";
+
+
+        Scanner scanner = new Scanner(System.in);
+        //String inputSearch = scanner.nextLine();
+
+
         String[] queries = inputSearch.toLowerCase().split(" ");
 
 
@@ -247,7 +250,7 @@ public class Main {
                 ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
                 // 4. display results
-               // System.out.println("--------------***********--------------");
+                // System.out.println("--------------***********--------------");
                 //System.out.println("Found " + search1 + " " + hits.length + " hits:" + "\n");
 
                 LinkedList<Integer> doc1 = new LinkedList<>();
@@ -257,8 +260,8 @@ public class Main {
                     doc1.add(docId);
                     Document d = searcher.doc(docId);
                     //System.out.println((i + 1) + ". " +  "\t" + docId + "\t" + d.get("title"));
-              //      System.out.println((i + 1) + "." + "\t" + docId);
-               //     System.out.println(textFiles.get(docId) + "\n");
+                    //      System.out.println((i + 1) + "." + "\t" + docId);
+                    //     System.out.println(textFiles.get(docId) + "\n");
                     //System.out.println((i + 1) + ". " +  "\t" + docId );
                 }
 
@@ -299,8 +302,8 @@ public class Main {
                 ScoreDoc[] hits2 = collector2.topDocs().scoreDocs;
 
                 // 4. display results
-             //   System.out.println("--------------***********--------------");
-               // System.out.println("Found " + search2 + " " + hits2.length + " hits:" + "\n");
+                //   System.out.println("--------------***********--------------");
+                // System.out.println("Found " + search2 + " " + hits2.length + " hits:" + "\n");
 
                 LinkedList<Integer> doc2 = new LinkedList<>();
 
@@ -309,8 +312,8 @@ public class Main {
                     doc2.add(docId2);
                     Document d2 = searcher2.doc(docId2);
                     //System.out.println((i + 1) + ". " +  "\t" + docId + "\t" + d.get("title"));
-                  //  System.out.println((i + 1) + "." + "\t" + docId2);
-                   // System.out.println(textFiles.get(docId2) + "\n");
+                    //  System.out.println((i + 1) + "." + "\t" + docId2);
+                    // System.out.println(textFiles.get(docId2) + "\n");
                     //System.out.println((i + 1) + ". " +  "\t" + docId );
                 }
 
@@ -400,7 +403,7 @@ public class Main {
                     Document d = searcher.doc(docId);
                     //System.out.println((i + 1) + ". " +  "\t" + docId + "\t" + d.get("title"));
                     //      System.out.println((i + 1) + "." + "\t" + docId);
-                    //     System.out.println(textFiles.get(docId) + "\n");
+                    //    System.out.println(textFiles.get(docId) + "\n");
                     //System.out.println((i + 1) + ". " +  "\t" + docId );
                 }
 
@@ -433,12 +436,12 @@ public class Main {
                 }
 
                 // 3. search
-                int hitsPerPage2 = 20;
+                int hitsPerPage2 = 10;
                 IndexReader reader2 = DirectoryReader.open(index);
                 IndexSearcher searcher2 = new IndexSearcher(reader2);
-                TopScoreDocCollector collector2 = TopScoreDocCollector.create(hitsPerPage2, 10);
+                TopScoreDocCollector collector2 = TopScoreDocCollector.create(hitsPerPage, 5);
                 searcher2.search(query2, collector2);
-                ScoreDoc[] hits2 = collector2.topDocs().scoreDocs;
+                ScoreDoc[] hits2 = collector.topDocs().scoreDocs;
 
                 // 4. display results
                 //   System.out.println("--------------***********--------------");
@@ -480,10 +483,10 @@ public class Main {
 
 
                 System.out.println("--------------***********--------------");
-                for (int i = 0; i < ans.size(); ++i) {
+                for (int i = 0; i < doc1.size(); ++i) {
                     //System.out.println((i + 1) + ". " +  "\t" + docId + "\t" + d.get("title"));
-                    System.out.println((i + 1) + "." + "\t" + ans.get(i));
-                    System.out.println(textFiles.get(ans.get(i)) + "\n");
+                    System.out.println((i + 1) + "." + "\t" + doc1.get(i));
+                    System.out.println(textFiles.get(doc1.get(i)) + "\n");
                     //System.out.println((i + 1) + ". " +  "\t" + docId );
                 }
                 System.out.println("--------------***********--------------");
@@ -503,56 +506,50 @@ public class Main {
 
 
     public static String[] fileRead(int index) throws IOException {
-        // File path is passed as parameter
 
-        String address = "E:\\SearchingData_Database\\";
+        // File path is passed as parameter
+        String address = "E:\\GitHub\\Searcher App\\Searcher-App\\Example Database\\";
 
         File file = new File(address + String.valueOf(index) + ".txt");
 
-        // Note:  Double backquote is to avoid compiler
-        // interpret words
-        // like \test as \t (ie. as a escape sequence)
 
         // Creating an object of BufferedReader class
         BufferedReader br = null;
 
         if(new FileReader(file) != null) {
-             br = new BufferedReader(new FileReader(file));
+            br = new BufferedReader(new FileReader(file));
         }
 
-        // Declaring a string variable
+
         String st;
         String contain="";
         String contain2="";
         int flag = 0, lineZero = 0;
-        // Consition holds true till
-        // there is character in a string
+
         while ((st = br.readLine()) != null) {
-            // Print the string
+
             if(st.contains("###")){
                 flag++;
             }
 
             if(flag == 1 && lineZero != 0) {
-//                PorterStemmer stem = new PorterStemmer();
-//                stem.setCurrent(contain);
-//                stem.stem();
-//                contain = stem.getCurrent();
-
                 contain2 = contain2 + st;
                 String[] words = st.split(" ");
+
                 ArrayList<String> wordsLine = new ArrayList<>();
+
                 for (int i = 0; i < words.length; i++) {
                     if(words[i].length() > 5){
                         String temp = "";
                         for (int j = 0; j < 5; j++) {
-                               temp = temp + words[i].charAt(j);
+                            temp = temp + words[i].charAt(j);
                         }
                         wordsLine.add(temp);
                     }else{
                         wordsLine.add(words[i]);
                     }
                 }
+
                 for (int i = 0; i < wordsLine.size(); i++) {
                     contain = contain + wordsLine.get(i).toLowerCase() + " ";
                 }
