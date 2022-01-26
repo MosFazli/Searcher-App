@@ -2,7 +2,7 @@
 Searching Text into the database
 This program is implemented in Java and uses the Lucene library (version 8.9.0).
 
-<img align='center'  src='searcherAppScreen.png.png' alt='Searcher app Screenshot'>
+<img align='center'  src='searcherAppScreen.png' alt='Searcher app Screenshot'>
 
 In this code, folder 0 is a number of text files that have been collected from the arxiv site and have an abstract and introduction, as input to the program. Then indexing based on these files begins.
 You can also change the address of the input folder or fileread function as you wish so that you can give the files you want to the program the way you want.
